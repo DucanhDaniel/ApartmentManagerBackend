@@ -80,7 +80,7 @@ public class AuthControllerTest {
 
         // 1c. Tạo UserAccount (Cháu)
         UserAccount testUser = new UserAccount();
-        testUser.setUsername("testuser"); // Tên đăng nhập
+        testUser.setEmail("testuser"); // Tên đăng nhập
         testUser.setPassword(passwordEncoder.encode("password123")); // Mật khẩu
         testUser.setRole("ADMIN"); // Gán vai trò
         testUser.setResident(testResident); // Nối với Resident

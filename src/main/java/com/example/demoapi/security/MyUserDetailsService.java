@@ -23,7 +23,11 @@ public class MyUserDetailsService implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
 
         // Đây là mấu chốt: Cung cấp vai trò (role) cho Spring Security
-        SimpleGrantedAuthority authority = new SimpleGrantedAuthority(userAccount.getRole());
+        String roleName = userAccount.getRole();
+        if (!roleName.startsWith("ROLE_")) {
+            roleName = "ROLE_" + roleName;
+        }
+        SimpleGrantedAuthority authority = new SimpleGrantedAuthority(roleName);
 
         return new User(
                 userAccount.getEmail(),

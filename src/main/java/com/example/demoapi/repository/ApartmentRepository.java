@@ -1,11 +1,29 @@
 package com.example.demoapi.repository;
 
+import com.example.demoapi.dto.response.HouseholdResponse;
 import com.example.demoapi.model.Apartment;
 import org.springframework.data.jpa.repository.JpaRepository;
-import java.util.Optional;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
-// Auto generated SQL query base on method name
+import java.util.List;
+
 public interface ApartmentRepository extends JpaRepository<Apartment, Integer> {
-    // Spring Data JPA tự hiểu: "Tìm một Apartment bằng cột apartmentid"
-    Optional<Apartment> findByhouseid(Integer houseid);
+
+    @Query("""
+    SELECT new com.example.demoapi.dto.response.HouseholdResponse(
+        a.houseid,
+        a.apartmentNumber,
+        owner.name,
+        a.area,
+        (SELECT COUNT(r) FROM Resident r WHERE r.apartment.houseid = a.houseid),
+        owner.phonenumber
+    )
+    FROM Apartment a
+    LEFT JOIN Resident owner ON owner.apartment.houseid = a.houseid AND owner.isHost = true
+    WHERE (:search IS NULL OR :search = '' 
+           OR lower(a.apartmentNumber) LIKE lower(concat('%', :search, '%'))
+           OR lower(owner.name) LIKE lower(concat('%', :search, '%')))
+""")
+    List<HouseholdResponse> findHouseholdsByKeyword(@Param("search") String search);
 }
