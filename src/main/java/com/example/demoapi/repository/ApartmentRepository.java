@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface ApartmentRepository extends JpaRepository<Apartment, Integer> {
 
@@ -26,4 +27,19 @@ public interface ApartmentRepository extends JpaRepository<Apartment, Integer> {
            OR lower(owner.name) LIKE lower(concat('%', :search, '%')))
 """)
     List<HouseholdResponse> findHouseholdsByKeyword(@Param("search") String search);
+
+    @Query("""
+    SELECT new com.example.demoapi.dto.response.HouseholdResponse(
+        a.houseid,
+        a.apartmentNumber,
+        owner.name,
+        a.area,
+        (SELECT COUNT(r) FROM Resident r WHERE r.apartment.houseid = a.houseid),
+        owner.phonenumber
+    )
+    FROM Apartment a
+    LEFT JOIN Resident owner ON owner.apartment.houseid = a.houseid AND owner.isHost = true
+    WHERE a.houseid = :id
+""")
+    Optional<HouseholdResponse> findHouseholdDetailById(@Param("id") Integer id);
 }

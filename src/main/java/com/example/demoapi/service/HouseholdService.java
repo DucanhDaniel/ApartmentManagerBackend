@@ -16,4 +16,9 @@ public class HouseholdService {
     public List<HouseholdResponse> getHouseholds(String search) {
         return apartmentRepository.findHouseholdsByKeyword(search);
     }
+
+    public HouseholdResponse getHouseholdById(Integer id) {
+        return apartmentRepository.findHouseholdDetailById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy hộ khẩu với ID: " + id));
+    }
 }
