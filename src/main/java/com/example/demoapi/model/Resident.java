@@ -47,4 +47,7 @@ public class Resident {
 
     @Column(unique = true) // CCCD nên là duy nhất
     private String cccd;
+
+    private String relationship; // Quan hệ với chủ hộ
+    private Boolean isHost;
 }

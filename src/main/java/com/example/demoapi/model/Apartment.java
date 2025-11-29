@@ -13,8 +13,17 @@ public class Apartment {
 
     private String building;
     private Integer floor;
-    private String apartmentstatus;
+
+    @Column(nullable = false)
     private Double area;
-    private String type;
+
+    @Enumerated(EnumType.STRING)
+    private ApartmentStatus status;
+
+    @Enumerated(EnumType.STRING)
+    private ApartmentType type;
+
+    @Column(nullable = false, unique = true)
+    private String apartmentNumber;
 
 }
