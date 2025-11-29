@@ -18,7 +18,7 @@ public class Resident {
 
     private String name;
 
-    @Column(length = 20)
+    @Column(length = 20, nullable = false)
     private String phonenumber;
 
     private String email;
@@ -45,7 +45,6 @@ public class Resident {
     @Column(name = "avatar")
     private String avatar;
 
-    @Column(unique = true) // CCCD nên là duy nhất
     private String cccd;
 
     private String relationship; // Quan hệ với chủ hộ

@@ -42,4 +42,8 @@ public interface ApartmentRepository extends JpaRepository<Apartment, Integer> {
     WHERE a.houseid = :id
 """)
     Optional<HouseholdResponse> findHouseholdDetailById(@Param("id") Integer id);
+
+    boolean existsByApartmentNumber(String apartmentNumber);
+
+
 }

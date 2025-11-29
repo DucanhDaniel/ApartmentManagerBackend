@@ -1,5 +1,6 @@
 package com.example.demoapi.controller;
 
+import com.example.demoapi.dto.request.HouseholdRequest;
 import com.example.demoapi.dto.response.HouseholdResponse;
 import com.example.demoapi.model.UserAccount;
 import com.example.demoapi.repository.UserAccountRepository;
@@ -67,5 +68,22 @@ public class HouseholdController {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bạn không có quyền xem thông tin hộ khác!");
             }
         }
+    }
+
+    @PostMapping
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')") // Chỉ Admin được thêm nhà
+    public ResponseEntity<HouseholdResponse> createHousehold(@RequestBody HouseholdRequest request) {
+        HouseholdResponse newHousehold = householdService.createHousehold(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(newHousehold);
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')") // Chỉ Admin được sửa
+    public ResponseEntity<HouseholdResponse> updateHousehold(
+            @PathVariable Integer id,
+            @RequestBody HouseholdRequest request
+    ) {
+        HouseholdResponse updatedHousehold = householdService.updateHousehold(id, request);
+        return ResponseEntity.ok(updatedHousehold);
     }
 }
