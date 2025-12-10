@@ -1,13 +1,18 @@
 package com.example.demoapi.service;
 
 import com.example.demoapi.dto.request.HouseholdRequest;
+import com.example.demoapi.dto.request.MemberRequest;
+import com.example.demoapi.dto.request.UpdateMemberRequest;
 import com.example.demoapi.dto.response.HouseholdResponse;
+import com.example.demoapi.dto.response.ResidentResponse;
 import com.example.demoapi.model.*;
 import com.example.demoapi.repository.ApartmentRepository;
 import com.example.demoapi.repository.InvoiceRepository;
 import com.example.demoapi.repository.ResidentRepository;
 import com.example.demoapi.repository.UserAccountRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -96,6 +101,8 @@ public class HouseholdService {
                 .area(savedApartment.getArea())
                 .memberCount(1L)
                 .phoneNumber(owner.getPhonenumber())
+                .building(savedApartment.getBuilding())
+                .status(savedApartment.getStatus())
                 .build();
     }
 
@@ -145,6 +152,8 @@ public class HouseholdService {
                 .area(savedApartment.getArea())
                 .phoneNumber(owner.getPhonenumber())
                 .memberCount(memberCount)
+                .building(savedApartment.getBuilding())
+                .status(savedApartment.getStatus())
                 .build();
     }
 
@@ -175,5 +184,217 @@ public class HouseholdService {
 
         // 4. Xóa Căn hộ
         apartmentRepository.delete(apartment);
+    }
+
+    public List<ResidentResponse> getHouseholdMembers(Integer householdId) {
+        // 1. Kiểm tra hộ khẩu có tồn tại không (Optional)
+        if (!apartmentRepository.existsById(householdId)) {
+            throw new RuntimeException("Hộ khẩu không tồn tại!");
+        }
+
+        // 2. Lấy danh sách Entity
+        List<Resident> residents = residentRepository.findByApartment_Houseid(householdId);
+
+        // 3. Convert sang DTO Response
+        return residents.stream()
+                .map(resident -> ResidentResponse.builder()
+                        .id(resident.getResidentid())
+                        .name(resident.getName())
+                        .dob(resident.getDob())
+                        .phoneNumber(resident.getPhonenumber())
+                        .relationship(resident.getRelationship())
+                        .isHost(resident.getIsHost())
+                        .status(resident.getState())
+                        .cccd(resident.getCccd())
+                        .build())
+                .toList();
+    }
+
+    @Transactional
+    public ResidentResponse addMemberToHousehold(Integer householdId, MemberRequest request) {
+        // 1. Tìm căn hộ
+        Apartment apartment = apartmentRepository.findById(householdId)
+                .orElseThrow(() -> new RuntimeException("Căn hộ không tồn tại!"));
+
+        // 2. Logic tái sử dụng hồ sơ (Nếu người này đã có trong hệ thống)
+        // Dựa vào SĐT để check xem người này đã tồn tại chưa
+        Resident newMember = new Resident();
+        Optional<Resident> existingProfile = residentRepository.findFirstByPhonenumber(request.getPhoneNumber());
+
+        if (existingProfile.isPresent()) {
+            // Nếu đã tồn tại -> Copy thông tin cá nhân gốc sang
+            Resident old = existingProfile.get();
+            newMember.setName(old.getName());
+            newMember.setDob(old.getDob());
+            newMember.setCccd(old.getCccd());
+            newMember.setAddress(old.getAddress());
+            newMember.setEmail(old.getEmail());
+            newMember.setAvatar(old.getAvatar());
+        } else {
+            // Nếu là người mới tinh -> Lấy từ Request
+            newMember.setName(request.getName());
+            newMember.setDob(request.getDob());
+            newMember.setCccd(request.getCccd());
+            newMember.setEmail(request.getEmail());
+            newMember.setAvatar(request.getAvatar());
+        }
+
+        // 3. Thiết lập thông tin cư trú cho căn hộ này
+        newMember.setPhonenumber(request.getPhoneNumber());
+        newMember.setApartment(apartment); // Gán vào nhà
+        newMember.setIsHost(false);        // Thành viên (Không phải chủ hộ)
+        newMember.setRelationship(request.getRelationship()); // Vợ/Con...
+
+        // Mặc định là Thường trú nếu không gửi status
+        newMember.setState(request.getStatus() != null ? request.getStatus() : ResidentStatus.THUONG_TRU);
+
+        newMember.setStartDate(LocalDate.now()); // Ngày bắt đầu ở
+        newMember.setNote(request.getNote());
+
+        // 4. Lưu vào DB
+        Resident savedMember = residentRepository.save(newMember);
+
+        // 5. Trả về Response
+        return ResidentResponse.builder()
+                .id(savedMember.getResidentid())
+                .name(savedMember.getName())
+                .dob(savedMember.getDob())
+                .phoneNumber(savedMember.getPhonenumber())
+                .relationship(savedMember.getRelationship())
+                .isHost(false)
+                .status(savedMember.getState())
+                .cccd(savedMember.getCccd())
+                .build();
+    }
+
+    @Transactional
+    public ResidentResponse updateMember(Integer memberId, UpdateMemberRequest request) {
+        // 1. Tìm thành viên cần sửa
+        Resident resident = residentRepository.findById(memberId)
+                .orElseThrow(() -> new RuntimeException("Cư dân không tồn tại!"));
+
+        // 2. Xác định Căn hộ đích (Target Apartment)
+        // (Để biết là đang tranh chức chủ hộ của nhà cũ hay nhà mới)
+        Apartment targetApartment = resident.getApartment(); // Mặc định là nhà hiện tại
+
+        if (request.getNewRoomNumber() != null && !request.getNewRoomNumber().isEmpty()) {
+            String currentRoom = resident.getApartment().getApartmentNumber();
+            if (!currentRoom.equals(request.getNewRoomNumber())) {
+                targetApartment = apartmentRepository.findByApartmentNumber(request.getNewRoomNumber())
+                        .orElseThrow(() -> new RuntimeException("Căn hộ mới không tồn tại!"));
+            }
+        }
+
+        // 3. --- LOGIC QUAN TRỌNG: XỬ LÝ CHỦ HỘ (Host Handling) ---
+        if (Boolean.TRUE.equals(request.getIsHost())) {
+            // Nếu yêu cầu set người này làm chủ hộ
+
+            // Tìm xem căn nhà đích hiện tại ai đang làm chủ?
+            Optional<Resident> currentHostOpt = residentRepository.findByApartment_HouseidAndIsHostTrue(targetApartment.getHouseid());
+
+            if (currentHostOpt.isPresent()) {
+                Resident currentHost = currentHostOpt.get();
+
+                // Chỉ xử lý nếu chủ hộ cũ KHÔNG PHẢI là người đang được sửa
+                if (!currentHost.getResidentid().equals(resident.getResidentid())) {
+                    // "Giáng chức" chủ hộ cũ
+                    currentHost.setIsHost(false);
+                    // Đổi quan hệ thành 'Thành viên' hoặc giữ nguyên tùy nghiệp vụ
+                    if ("Chủ hộ".equals(currentHost.getRelationship())) {
+                        currentHost.setRelationship("Thành viên");
+                    }
+                    residentRepository.save(currentHost);
+                }
+            }
+
+            // Set người này làm chủ hộ
+            resident.setIsHost(true);
+            resident.setRelationship("Chủ hộ"); // Tự động sửa relationship cho hợp lý
+        } else if (Boolean.FALSE.equals(request.getIsHost())) {
+            // Nếu user chủ động set isHost = false -> Chấp nhận luôn
+            resident.setIsHost(false);
+        }
+
+        // 4. Cập nhật các thông tin cá nhân khác
+        if (request.getName() != null) resident.setName(request.getName());
+        if (request.getPhoneNumber() != null) resident.setPhonenumber(request.getPhoneNumber());
+        if (request.getEmail() != null) resident.setEmail(request.getEmail());
+        if (request.getDob() != null) resident.setDob(request.getDob());
+        if (request.getCccd() != null) resident.setCccd(request.getCccd());
+        if (request.getAvatar() != null) resident.setAvatar(request.getAvatar());
+        if (request.getNote() != null) resident.setNote(request.getNote());
+
+        if (request.getStatus() != null) resident.setState(request.getStatus());
+        // Nếu user gửi relationship riêng thì ghi đè, còn không thì giữ logic ở bước 3
+        if (request.getRelationship() != null && !Boolean.TRUE.equals(request.getIsHost())) {
+            resident.setRelationship(request.getRelationship());
+        }
+
+        // 5. Gán vào căn hộ (Nếu có thay đổi nhà)
+        if (!resident.getApartment().getHouseid().equals(targetApartment.getHouseid())) {
+            resident.setApartment(targetApartment);
+            resident.setStartDate(LocalDate.now()); // Reset ngày vào ở
+        }
+
+        // 6. Lưu và Trả về
+        Resident savedMember = residentRepository.save(resident);
+
+        return ResidentResponse.builder()
+                .id(savedMember.getResidentid())
+                .name(savedMember.getName())
+                .dob(savedMember.getDob())
+                .phoneNumber(savedMember.getPhonenumber())
+                .relationship(savedMember.getRelationship())
+                .isHost(savedMember.getIsHost())
+                .status(savedMember.getState())
+                .cccd(savedMember.getCccd())
+                .build();
+    }
+    public Page<ResidentResponse> getAllResidents(String keyword, Pageable pageable) {
+        // 1. Gọi Repo lấy danh sách Entity có phân trang
+        Page<Resident> residentPage = residentRepository.findAllResidents(keyword, pageable);
+
+        // 2. Map từ Entity sang DTO
+        return residentPage.map(resident -> ResidentResponse.builder()
+                .id(resident.getResidentid())
+                .name(resident.getName())
+                .dob(resident.getDob())
+                .phoneNumber(resident.getPhonenumber())
+                .relationship(resident.getRelationship())
+                .isHost(resident.getIsHost())
+                .status(resident.getState())
+                .cccd(resident.getCccd())
+                // Map thêm thông tin phòng
+                .roomNumber(resident.getApartment() != null ? resident.getApartment().getApartmentNumber() : "N/A")
+                .building(resident.getApartment() != null ? resident.getApartment().getBuilding() : "N/A")
+                .build());
+    }
+
+    @Transactional
+    public void deleteResident(Integer residentId) {
+        // 1. Tìm cư dân
+        Resident resident = residentRepository.findById(residentId)
+                .orElseThrow(() -> new RuntimeException("Cư dân không tồn tại!"));
+
+        // 2. LOGIC KIỂM TRA NỢ (Chỉ áp dụng nếu là CHỦ HỘ)
+        if (Boolean.TRUE.equals(resident.getIsHost())) {
+            Integer houseId = resident.getApartment().getHouseid();
+
+            // Check trong bảng Invoice
+            boolean hasDebt = invoiceRepository.existsUnpaidInvoiceByHouseId(houseId);
+
+            if (hasDebt) {
+                throw new RuntimeException("KHÔNG THỂ XÓA: Căn hộ của chủ hộ này đang còn dư nợ chưa thanh toán!");
+            }
+        }
+
+        // 3. Xóa tài khoản User liên kết (Nếu có)
+        // (Để tránh lỗi khóa ngoại hoặc user 'mồ côi')
+        if (userAccountRepository.existsByResident(resident)) {
+            userAccountRepository.deleteByResident(resident);
+        }
+
+        // 4. Xóa cư dân
+        residentRepository.delete(resident);
     }
 }

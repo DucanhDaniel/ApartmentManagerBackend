@@ -1,7 +1,10 @@
 package com.example.demoapi.controller;
 
 import com.example.demoapi.dto.request.HouseholdRequest;
+import com.example.demoapi.dto.request.MemberRequest;
+import com.example.demoapi.dto.request.UpdateMemberRequest;
 import com.example.demoapi.dto.response.HouseholdResponse;
+import com.example.demoapi.dto.response.ResidentResponse;
 import com.example.demoapi.model.UserAccount;
 import com.example.demoapi.repository.UserAccountRepository;
 import com.example.demoapi.service.HouseholdService;
@@ -96,5 +99,60 @@ public class HouseholdController {
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
+    }
+
+    @GetMapping("/{id}/members")
+    public ResponseEntity<List<ResidentResponse>> getHouseholdMembers(@PathVariable Integer id) {
+
+        // 1. Lấy thông tin người đang đăng nhập
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String currentEmail = authentication.getName();
+
+        // 2. Kiểm tra quyền Admin
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
+        if (isAdmin) {
+            // Admin được xem hết
+            return ResponseEntity.ok(householdService.getHouseholdMembers(id));
+        } else {
+            // 3. Nếu là Resident: Kiểm tra xem có đúng nhà mình không
+            UserAccount currentUser = userAccountRepository.findByEmail(currentEmail)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+
+            // Lấy ID nhà của user hiện tại
+            Integer myHouseId = null;
+            if (currentUser.getResident() != null && currentUser.getResident().getApartment() != null) {
+                myHouseId = currentUser.getResident().getApartment().getHouseid();
+            }
+
+            // So sánh
+            if (myHouseId != null && myHouseId.equals(id)) {
+                return ResponseEntity.ok(householdService.getHouseholdMembers(id));
+            } else {
+                // Nếu id trên URL khác id nhà mình -> CHẶN
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bạn chỉ được xem thành viên của hộ gia đình mình!");
+            }
+        }
+    }
+
+    @PostMapping("/{id}/members")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')") // Chỉ Admin được thêm người
+    public ResponseEntity<ResidentResponse> addMember(
+            @PathVariable Integer id,
+            @RequestBody MemberRequest request
+    ) {
+        ResidentResponse response = householdService.addMemberToHousehold(id, request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PutMapping("/members/{memberId}")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')") // Chỉ Admin được sửa
+    public ResponseEntity<ResidentResponse> updateMember(
+            @PathVariable Integer memberId,
+            @RequestBody UpdateMemberRequest request
+    ) {
+        ResidentResponse response = householdService.updateMember(memberId, request);
+        return ResponseEntity.ok(response);
     }
 }

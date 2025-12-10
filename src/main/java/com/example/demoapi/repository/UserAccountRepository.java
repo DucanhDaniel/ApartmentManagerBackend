@@ -15,4 +15,6 @@ public interface UserAccountRepository extends JpaRepository<UserAccount, Intege
     Boolean existsByResident(Resident resident);
 
     void deleteByResident_Residentid(Integer residentId);
+
+    void deleteByResident(Resident resident);
 }

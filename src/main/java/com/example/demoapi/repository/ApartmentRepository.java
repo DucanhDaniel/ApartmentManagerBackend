@@ -18,7 +18,9 @@ public interface ApartmentRepository extends JpaRepository<Apartment, Integer> {
         owner.name,
         a.area,
         (SELECT COUNT(r) FROM Resident r WHERE r.apartment.houseid = a.houseid),
-        owner.phonenumber
+        owner.phonenumber,
+        a.building,
+        a.status
     )
     FROM Apartment a
     LEFT JOIN Resident owner ON owner.apartment.houseid = a.houseid AND owner.isHost = true
@@ -35,7 +37,9 @@ public interface ApartmentRepository extends JpaRepository<Apartment, Integer> {
         owner.name,
         a.area,
         (SELECT COUNT(r) FROM Resident r WHERE r.apartment.houseid = a.houseid),
-        owner.phonenumber
+        owner.phonenumber,
+        a.building,
+        a.status
     )
     FROM Apartment a
     LEFT JOIN Resident owner ON owner.apartment.houseid = a.houseid AND owner.isHost = true
@@ -44,6 +48,8 @@ public interface ApartmentRepository extends JpaRepository<Apartment, Integer> {
     Optional<HouseholdResponse> findHouseholdDetailById(@Param("id") Integer id);
 
     boolean existsByApartmentNumber(String apartmentNumber);
+
+    Optional<Apartment> findByApartmentNumber(String apartmentNumber);
 
 
 }
