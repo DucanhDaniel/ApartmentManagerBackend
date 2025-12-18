@@ -730,7 +730,7 @@ Before deploying to AWS, you need:
 Create `.env.production` in the `client` folder:
 
 ```env
-VITE_API_URL=https://your-backend-api-url.com/api
+VITE_API_URL=http://apartment-manager-api-env.eba-szyaeqjz.ap-southeast-1.elasticbeanstalk.com/api
 ```
 
 Update all service files to use environment variable:
@@ -764,7 +764,7 @@ Create `config.ts` in the `client` folder:
 export const config = {
   apiUrl:
     process.env.NODE_ENV === "production"
-      ? "https://your-backend-url.elasticbeanstalk.com/api"
+      ? "http://apartment-manager-api-env.eba-szyaeqjz.ap-southeast-1.elasticbeanstalk.com/api"
       : "http://localhost:8080/api",
 };
 ```
@@ -776,8 +776,8 @@ Then update service files to import from config.
 **Update `application-prod.properties`:**
 
 ```properties
-# RDS Database URL (will be set after creating RDS)
-spring.datasource.url=jdbc:postgresql://your-rds-endpoint.rds.amazonaws.com:5432/apartment_db
+# RDS Database URL (use your actual RDS endpoint)
+spring.datasource.url=jdbc:postgresql://apartment-db.c5a0asik4hoo.ap-southeast-1.rds.amazonaws.com:5432/apartment_db
 spring.datasource.username=${DB_USERNAME}
 spring.datasource.password=${DB_PASSWORD}
 
@@ -805,7 +805,8 @@ In `SecurityConfig.java`, update CORS to allow your frontend domain:
 // Replace * with your actual Amplify domain
 configuration.setAllowedOriginPatterns(List.of(
     "https://your-app-name.amplifyapp.com",
-    "https://main.your-app-id.amplifyapp.com"
+    "https://main.your-app-id.amplifyapp.com",
+    "http://localhost:3000"  // For local development
 ));
 ```
 
@@ -901,7 +902,7 @@ build/
 **Using AWS Console:**
 
 1. Go to **AWS Console** → **RDS** → **Create Database**
-2. Choose **PostgreSQL** (version 15 recommended)
+2. Choose **PostgreSQL** (version 15 or 17 recommended)
 3. Choose **Free tier** or appropriate instance class (e.g., `db.t3.micro`)
 4. **Settings:**
    - DB Instance Identifier: `apartment-db`
@@ -911,6 +912,7 @@ build/
    - VPC: Default VPC
    - Public access: **Yes** (for initial setup; restrict later)
    - Security group: Create new (allow PostgreSQL port 5432)
+   - Availability Zone: Choose your preferred region (e.g., ap-southeast-1)
 6. **Database name:** `apartment_db`
 7. Click **Create Database**
 
@@ -921,7 +923,7 @@ build/
 After RDS is created:
 
 1. Go to RDS Console → Databases → `apartment-db`
-2. Copy the **Endpoint** (e.g., `apartment-db.xxxx.us-east-1.rds.amazonaws.com`)
+2. Copy the **Endpoint** (e.g., `apartment-db.c5a0asik4hoo.ap-southeast-1.rds.amazonaws.com`)
 
 ### 3.3 Configure Security Group
 
@@ -941,10 +943,10 @@ After RDS is created:
 docker exec apartment_postgres pg_dump -U myuser -d apartment_db > backup_production.sql
 
 # Connect to RDS
-psql -h apartment-db.xxxx.us-east-1.rds.amazonaws.com -U postgres -d apartment_db
+psql -h apartment-db.c5a0asik4hoo.ap-southeast-1.rds.amazonaws.com -U postgres -d apartment_db
 
 # Or import directly
-psql -h apartment-db.xxxx.us-east-1.rds.amazonaws.com -U postgres -d apartment_db < backup_production.sql
+psql -h apartment-db.c5a0asik4hoo.ap-southeast-1.rds.amazonaws.com -U postgres -d apartment_db < backup_production.sql
 ```
 
 ---
@@ -979,11 +981,14 @@ Add these variables:
 
 ```
 SPRING_PROFILES_ACTIVE=prod
+SERVER_PORT=5000
 DB_USERNAME=postgres
 DB_PASSWORD=your-rds-password
-JWT_ACCESS_SECRET=your-strong-secret-key-here
-JWT_REFRESH_SECRET=your-strong-refresh-secret-key-here
-SPRING_DATASOURCE_URL=jdbc:postgresql://apartment-db.xxxx.rds.amazonaws.com:5432/apartment_db
+JWT_ACCESS_TOKEN_SECRET=tKIc7RZEAoAo5dnVO7bhCrZuVU6PCzGO
+JWT_REFRESH_TOKEN_SECRET=58484E6D3A5164B36C493BFB6E1D1PCzGO
+JWT_ACCESS_TOKEN_EXPIRATION=3600000
+JWT_REFRESH_TOKEN_EXPIRATION=86400000
+SPRING_DATASOURCE_URL=jdbc:postgresql://apartment-db.c5a0asik4hoo.ap-southeast-1.rds.amazonaws.com:5432/apartment_db
 ```
 
 **Click Apply**
@@ -998,8 +1003,9 @@ SPRING_DATASOURCE_URL=jdbc:postgresql://apartment-db.xxxx.rds.amazonaws.com:5432
 
 After deployment completes:
 
-- Your backend URL will be: `http://apartment-manager-api.elasticbeanstalk.com`
-- Test: `curl http://apartment-manager-api.elasticbeanstalk.com/api/auth/login`
+- Your backend URL will be: `http://apartment-manager-api-env.eba-szyaeqjz.ap-southeast-1.elasticbeanstalk.com`
+- Test: `curl http://apartment-manager-api-env.eba-szyaeqjz.ap-southeast-1.elasticbeanstalk.com/api/auth/login`
+- Expected response: 405 or 500 error (endpoint exists but needs POST method)
 
 ---
 
@@ -1012,7 +1018,7 @@ After deployment completes:
 **In `.env.production`:**
 
 ```env
-VITE_API_URL=http://apartment-manager-api.elasticbeanstalk.com/api
+VITE_API_URL=http://apartment-manager-api-env.eba-szyaeqjz.ap-southeast-1.elasticbeanstalk.com/api
 ```
 
 **Commit and push to GitHub:**
@@ -1063,7 +1069,7 @@ In Amplify Console:
 **App settings** → **Environment variables** → **Add**
 
 ```
-VITE_API_URL=http://apartment-manager-api.elasticbeanstalk.com/api
+VITE_API_URL=http://apartment-manager-api-env.eba-szyaeqjz.ap-southeast-1.elasticbeanstalk.com/api
 ```
 
 ### 5.5 Deploy
