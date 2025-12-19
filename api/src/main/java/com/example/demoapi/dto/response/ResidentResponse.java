@@ -13,6 +13,9 @@ public class ResidentResponse {
     private String name;
     private LocalDate dob;
     private String phoneNumber;
+
+    private String email;
+
     private String relationship; // Quan hệ với chủ hộ
     private Boolean isHost;      // Có phải chủ hộ không
     private ResidentStatus status; // Thường trú/Tạm trú...

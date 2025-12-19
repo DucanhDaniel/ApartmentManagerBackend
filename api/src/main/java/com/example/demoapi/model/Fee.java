@@ -13,6 +13,7 @@ import java.math.BigDecimal;
 public class Fee {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "feeid")
     private Integer id;
 
     @Column(name = "feename", nullable = false)

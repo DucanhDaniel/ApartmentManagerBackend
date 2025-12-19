@@ -6,7 +6,6 @@ import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 
 import java.math.BigDecimal;
-
 @Getter
 @Setter
 @Entity
@@ -14,7 +13,7 @@ import java.math.BigDecimal;
 public class Invoicedetail {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer paymentid;
+    private Integer id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "invoiceid")
