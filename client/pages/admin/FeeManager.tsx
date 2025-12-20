@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { getAllFeeDefinitions, createFeeDefinition } from '../../services/feeService';
+import { getAllFeeDefinitions, createFeeDefinition, updateFeeDefinition, deleteFeeDefinition } from '../../services/feeService';
 import { FeeDefinition } from '../../types';
-import { Plus, Loader2, RefreshCcw, Banknote, ShieldCheck, ShieldAlert, X } from 'lucide-react';
+import { Plus, Loader2, RefreshCcw, Banknote, ShieldCheck, ShieldAlert, X, Edit2, Trash2, AlertTriangle, Save } from 'lucide-react';
 
 const FeeManager: React.FC = () => {
   const [fees, setFees] = useState<FeeDefinition[]>([]);
@@ -11,6 +11,7 @@ const FeeManager: React.FC = () => {
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Partial<FeeDefinition>>({
     name: '',
     description: '',
@@ -19,6 +20,12 @@ const FeeManager: React.FC = () => {
     billingCycle: 'monthly',
     isMandatory: true
   });
+
+  // Delete Confirmation State
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    id: number;
+    name: string;
+  } | null>(null);
 
   const loadFees = async () => {
     setLoading(true);
@@ -37,15 +44,28 @@ const FeeManager: React.FC = () => {
     loadFees();
   }, []);
 
-  const handleOpenModal = () => {
-      setFormData({
-        name: '',
-        description: '',
-        unitPrice: 0,
-        unit: 'm2',
-        billingCycle: 'monthly',
-        isMandatory: true
-      });
+  const handleOpenModal = (fee?: FeeDefinition) => {
+      if (fee) {
+          setEditingId(fee.id);
+          setFormData({
+            name: fee.name,
+            description: fee.description,
+            unitPrice: fee.unitPrice,
+            unit: fee.unit,
+            billingCycle: fee.billingCycle,
+            isMandatory: fee.isMandatory
+          });
+      } else {
+          setEditingId(null);
+          setFormData({
+            name: '',
+            description: '',
+            unitPrice: 0,
+            unit: 'm2',
+            billingCycle: 'monthly',
+            isMandatory: true
+          });
+      }
       setIsModalOpen(true);
   };
 
@@ -53,14 +73,32 @@ const FeeManager: React.FC = () => {
       e.preventDefault();
       setIsSubmitting(true);
       try {
-          await createFeeDefinition(formData);
-          alert('Thêm khoản phí thành công!');
+          if (editingId) {
+              await updateFeeDefinition(editingId, formData);
+              alert('Cập nhật khoản phí thành công!');
+          } else {
+              await createFeeDefinition(formData);
+              alert('Thêm khoản phí thành công!');
+          }
           setIsModalOpen(false);
           loadFees(); // Refresh list
       } catch (err: any) {
           alert(err.message);
       } finally {
           setIsSubmitting(false);
+      }
+  };
+
+  const confirmDelete = async () => {
+      if (!deleteConfirmation) return;
+      try {
+          const message = await deleteFeeDefinition(deleteConfirmation.id);
+          alert(message);
+          setDeleteConfirmation(null);
+          loadFees();
+      } catch (err: any) {
+          alert(err.message);
+          setDeleteConfirmation(null);
       }
   };
 
@@ -76,7 +114,7 @@ const FeeManager: React.FC = () => {
             <p className="text-sm text-gray-500">Danh mục các loại phí trong chung cư</p>
         </div>
         <button 
-          onClick={handleOpenModal}
+          onClick={() => handleOpenModal()}
           className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
           <Plus className="w-5 h-5 mr-2" />
@@ -107,6 +145,7 @@ const FeeManager: React.FC = () => {
                     <th className="px-6 py-4">Đơn vị tính</th>
                     <th className="px-6 py-4">Chu kỳ</th>
                     <th className="px-6 py-4">Loại phí</th>
+                    <th className="px-6 py-4 text-right">Thao tác</th>
                 </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -145,11 +184,27 @@ const FeeManager: React.FC = () => {
                             </span>
                          )}
                     </td>
+                    <td className="px-6 py-4 text-right flex items-center justify-end space-x-2">
+                        <button 
+                            onClick={() => handleOpenModal(fee)}
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="Sửa"
+                        >
+                            <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button 
+                            onClick={() => setDeleteConfirmation({ id: fee.id, name: fee.name })}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Xóa"
+                        >
+                            <Trash2 className="w-4 h-4" />
+                        </button>
+                    </td>
                     </tr>
                 ))}
                 {fees.length === 0 && (
                     <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-gray-400">
+                    <td colSpan={7} className="px-6 py-12 text-center text-gray-400">
                         Chưa có khoản phí nào được định nghĩa
                     </td>
                     </tr>
@@ -160,12 +215,14 @@ const FeeManager: React.FC = () => {
         )}
       </div>
 
-       {/* Add Fee Modal */}
+       {/* Add/Edit Fee Modal */}
        {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
              <div className="bg-white rounded-xl shadow-xl max-w-lg w-full p-6">
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-bold text-gray-800">Thêm khoản phí mới</h2>
+                  <h2 className="text-xl font-bold text-gray-800">
+                    {editingId ? 'Sửa khoản phí' : 'Thêm khoản phí mới'}
+                  </h2>
                   <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600">
                     <X className="w-6 h-6" />
                   </button>
@@ -270,12 +327,42 @@ const FeeManager: React.FC = () => {
                           disabled={isSubmitting}
                           className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
                         >
-                          {isSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
-                          {isSubmitting ? 'Đang thêm...' : 'Tạo khoản phí'}
+                          {isSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : (editingId ? <Save className="w-4 h-4 mr-2" /> : <Plus className="w-4 h-4 mr-2" />)}
+                          {isSubmitting ? 'Đang lưu...' : (editingId ? 'Cập nhật' : 'Tạo khoản phí')}
                         </button>
                    </div>
                 </form>
              </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmation && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4">
+            <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6">
+                <div className="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
+                    <AlertTriangle className="w-6 h-6 text-red-600" />
+                </div>
+                <h3 className="text-lg font-bold text-center text-gray-900 mb-2">Xóa khoản phí?</h3>
+                <p className="text-sm text-center text-gray-500 mb-6">
+                    Bạn có chắc chắn muốn xóa khoản phí <b>{deleteConfirmation.name}</b>? 
+                    Nếu khoản phí này đã phát sinh hóa đơn, hệ thống sẽ từ chối xóa để đảm bảo toàn vẹn dữ liệu.
+                </p>
+                <div className="flex space-x-3">
+                    <button
+                        onClick={() => setDeleteConfirmation(null)}
+                        className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium"
+                    >
+                        Hủy
+                    </button>
+                    <button
+                        onClick={confirmDelete}
+                        className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium"
+                    >
+                        Xóa
+                    </button>
+                </div>
+            </div>
         </div>
       )}
     </div>

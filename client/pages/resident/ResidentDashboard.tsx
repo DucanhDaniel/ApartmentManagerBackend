@@ -1,8 +1,9 @@
+
 import React, { useEffect, useState } from 'react';
-import { User, Household } from '../../types';
-import { MOCK_FEES } from '../../services/mockData';
+import { User, Household, Invoice } from '../../types';
 import { getHouseholdById } from '../../services/householdService';
-import { CreditCard, Home, AlertTriangle, Loader2 } from 'lucide-react';
+import { getInvoices } from '../../services/invoiceService';
+import { CreditCard, Home, AlertTriangle, Loader2, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface ResidentDashboardProps {
@@ -11,30 +12,48 @@ interface ResidentDashboardProps {
 
 const ResidentDashboard: React.FC<ResidentDashboardProps> = ({ user }) => {
   const [household, setHousehold] = useState<Household | null>(null);
+  const [unpaidInvoices, setUnpaidInvoices] = useState<Invoice[]>([]);
+  const [paidInvoices, setPaidInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // Still using mock fees for now as per current state of app
-  const myFees = MOCK_FEES.filter(f => f.householdId === user.householdId);
-  const pendingFees = myFees.filter(f => f.status === 'PENDING');
-  const totalDebt = pendingFees.reduce((acc, curr) => acc + curr.amount, 0);
+  const [loadingFinance, setLoadingFinance] = useState(true);
 
   useEffect(() => {
-    const fetchHousehold = async () => {
-      if (user.householdId) {
-        try {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        if (user.householdId) {
           const data = await getHouseholdById(user.householdId);
           setHousehold(data);
-        } catch (error) {
-          console.error("Failed to fetch household info", error);
-        } finally {
-          setLoading(false);
         }
-      } else {
+      } catch (error) {
+        console.error("Failed to fetch household info", error);
+      } finally {
         setLoading(false);
       }
     };
-    fetchHousehold();
+
+    const fetchFinancialData = async () => {
+      setLoadingFinance(true);
+      try {
+        // Fetch unpaid for debt
+        const unpaidData = await getInvoices(0, 50, '', 'unpaid');
+        setUnpaidInvoices(unpaidData.content);
+
+        // Fetch paid for recent transactions
+        const paidData = await getInvoices(0, 3, '', 'paid');
+        setPaidInvoices(paidData.content);
+      } catch (error) {
+        console.error("Failed to fetch invoice data", error);
+      } finally {
+        setLoadingFinance(false);
+      }
+    };
+
+    fetchData();
+    fetchFinancialData();
   }, [user.householdId]);
+
+  const totalDebt = unpaidInvoices.reduce((acc, curr) => acc + curr.totalAmount, 0);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
@@ -87,27 +106,35 @@ const ResidentDashboard: React.FC<ResidentDashboardProps> = ({ user }) => {
 
       {/* Fee Summary */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-gradient-to-br from-red-500 to-pink-600 rounded-xl shadow-lg p-6 text-white">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-red-100 font-medium mb-1">Tổng dư nợ</p>
-              <h3 className="text-3xl font-bold">{formatCurrency(totalDebt)}</h3>
+        <div className="bg-gradient-to-br from-red-500 to-pink-600 rounded-xl shadow-lg p-6 text-white relative overflow-hidden">
+          <div className="relative z-10">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-red-100 font-medium mb-1">Tổng dư nợ</p>
+                {loadingFinance ? (
+                  <div className="h-9 w-32 bg-white bg-opacity-20 animate-pulse rounded"></div>
+                ) : (
+                  <h3 className="text-3xl font-bold">{formatCurrency(totalDebt)}</h3>
+                )}
+              </div>
+              <div className="p-2 bg-white bg-opacity-20 rounded-lg">
+                <AlertTriangle className="w-6 h-6 text-white" />
+              </div>
             </div>
-            <div className="p-2 bg-white bg-opacity-20 rounded-lg">
-              <AlertTriangle className="w-6 h-6 text-white" />
+            <p className="mt-4 text-sm text-red-100">
+              {loadingFinance ? 'Đang kiểm tra...' : `Bạn có ${unpaidInvoices.length} khoản phí chưa thanh toán`}
+            </p>
+            <div className="mt-6">
+              <Link 
+                to="/resident/fees" 
+                className="block w-full text-center py-2 bg-white text-red-600 font-bold rounded-lg hover:bg-red-50 transition-colors shadow-md"
+              >
+                Thanh toán ngay
+              </Link>
             </div>
           </div>
-          <p className="mt-4 text-sm text-red-100">
-            Bạn có {pendingFees.length} khoản phí chưa thanh toán
-          </p>
-          <div className="mt-6">
-            <Link 
-              to="/resident/fees" 
-              className="block w-full text-center py-2 bg-white text-red-600 font-medium rounded-lg hover:bg-red-50 transition-colors"
-            >
-              Thanh toán ngay
-            </Link>
-          </div>
+          {/* Decorative background circle */}
+          <div className="absolute -bottom-12 -right-12 w-48 h-48 bg-white opacity-10 rounded-full"></div>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col justify-between">
@@ -116,24 +143,47 @@ const ResidentDashboard: React.FC<ResidentDashboardProps> = ({ user }) => {
                <CreditCard className="w-5 h-5 text-green-600" />
                <h3 className="font-semibold text-gray-800">Giao dịch gần đây</h3>
             </div>
-            {myFees.filter(f => f.status === 'PAID').slice(0, 3).map(fee => (
-              <div key={fee.id} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
-                <div>
-                  <p className="text-sm font-medium text-gray-800">{fee.name}</p>
-                  <p className="text-xs text-gray-500">{fee.month}</p>
-                </div>
-                <span className="text-sm font-medium text-green-600">
-                  {formatCurrency(fee.amount)}
-                </span>
+            
+            {loadingFinance ? (
+              <div className="space-y-4">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="flex justify-between items-center py-2 border-b border-gray-50 last:border-0">
+                    <div className="space-y-2">
+                      <div className="h-4 w-32 bg-gray-100 animate-pulse rounded"></div>
+                      <div className="h-3 w-16 bg-gray-50 animate-pulse rounded"></div>
+                    </div>
+                    <div className="h-4 w-20 bg-gray-100 animate-pulse rounded"></div>
+                  </div>
+                ))}
               </div>
-            ))}
-             {myFees.filter(f => f.status === 'PAID').length === 0 && (
-                 <p className="text-sm text-gray-400 italic">Chưa có giao dịch nào.</p>
-             )}
+            ) : (
+              <div className="space-y-1">
+                {paidInvoices.map(inv => (
+                  <div key={inv.id} className="flex justify-between items-center py-3 border-b border-gray-50 last:border-0 hover:bg-gray-50 px-2 -mx-2 rounded-lg transition-colors">
+                    <div>
+                      <p className="text-sm font-bold text-gray-800">{inv.title}</p>
+                      <p className="text-xs text-gray-500">Kỳ: {inv.month}/{inv.year}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-black text-green-600">
+                        {formatCurrency(inv.totalAmount)}
+                      </p>
+                      <span className="text-[10px] text-gray-400 uppercase font-bold">Thành công</span>
+                    </div>
+                  </div>
+                ))}
+                {paidInvoices.length === 0 && (
+                  <div className="py-8 text-center">
+                    <CreditCard className="w-10 h-10 text-gray-200 mx-auto mb-2" />
+                    <p className="text-sm text-gray-400 italic">Chưa có giao dịch nào được ghi nhận.</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
-           <Link to="/resident/history" className="text-sm text-blue-600 font-medium hover:underline mt-4 inline-block">
-             Xem tất cả lịch sử &rarr;
-           </Link>
+          <Link to="/resident/history" className="text-sm text-blue-600 font-bold hover:underline mt-4 flex items-center">
+             Xem tất cả lịch sử giao dịch <ArrowRight className="w-4 h-4 ml-1" />
+          </Link>
         </div>
       </div>
     </div>

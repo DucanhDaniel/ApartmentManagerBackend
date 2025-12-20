@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { getHouseholds, createHousehold, updateHousehold, deleteHousehold, getHouseholdMembers, addHouseholdMember, updateHouseholdMember } from '../../services/householdService';
 import { Household, ResidentMember, ApartmentStatus, ApartmentType } from '../../types';
@@ -532,7 +533,7 @@ const HouseholdManager: React.FC = () => {
       {/* Modal Member List Management */}
       {isMemberModalOpen && selectedHousehold && (
          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-             <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full p-6 max-h-[90vh] flex flex-col">
+             <div className="bg-white rounded-xl shadow-xl max-w-5xl w-full p-6 max-h-[90vh] flex flex-col">
                 <div className="flex justify-between items-center mb-4 pb-4 border-b">
                    <div>
                        <h2 className="text-xl font-bold text-gray-800">Quản lý nhân khẩu</h2>
@@ -554,12 +555,12 @@ const HouseholdManager: React.FC = () => {
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                             <tr>
-                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Họ tên</th>
-                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Ngày sinh</th>
-                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Quan hệ</th>
-                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">SĐT</th>
-                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">CCCD</th>
-                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Mã cư dân</th>
+                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Họ tên</th>
+                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày sinh</th>
+                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quan hệ</th>
+                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SĐT / Email</th>
+                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CCCD</th>
+                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã cư dân</th>
                                 <th className="px-3 py-2 text-right"></th>
                             </tr>
                         </thead>
@@ -569,7 +570,10 @@ const HouseholdManager: React.FC = () => {
                                     <td className="px-3 py-2 text-sm text-gray-900 font-medium">{m.fullName}</td>
                                     <td className="px-3 py-2 text-sm text-gray-500">{m.dateOfBirth}</td>
                                     <td className="px-3 py-2 text-sm text-gray-500">{m.relationToOwner}</td>
-                                    <td className="px-3 py-2 text-sm text-gray-500">{m.phoneNumber || '-'}</td>
+                                    <td className="px-3 py-2 text-sm text-gray-500">
+                                        <div className="font-medium text-gray-700">{m.phoneNumber || '-'}</div>
+                                        <div className="text-xs text-gray-400 truncate max-w-[150px]">{m.email || '-'}</div>
+                                    </td>
                                     <td className="px-3 py-2 text-sm text-gray-500">{m.cccd || '-'}</td>
                                     <td className="px-3 py-2 text-sm font-mono text-blue-600">{m.residentCode}</td>
                                     <td className="px-3 py-2 text-right flex items-center justify-end gap-1">

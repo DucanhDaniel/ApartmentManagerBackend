@@ -23,4 +23,6 @@ public class ResidentResponse {
 
     private String roomNumber;
     private String building;
+
+    private boolean hasAccount;
 }

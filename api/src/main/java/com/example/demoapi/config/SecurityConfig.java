@@ -1,8 +1,7 @@
 package com.example.demoapi.config; // hoặc .security
 
-import java.util.Arrays;
-import java.util.List;
-
+import com.example.demoapi.security.JwtAuthenticationFilter;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -17,9 +16,8 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import com.example.demoapi.security.JwtAuthenticationFilter;
-
-import lombok.RequiredArgsConstructor;
+import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -35,20 +33,26 @@ public class SecurityConfig {
         http
                 // 1. Tắt CSRF (vì dùng API)
                 .csrf(csrf -> csrf.disable())
+
                 // 2. KÍCH HOẠT CORS VÀ TRỎ VỀ BEAN CẤU HÌNH BÊN DƯỚI
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+
                 // 3. Phân quyền
                 .authorizeHttpRequests(auth -> auth
-                // Cho phép Auth
-                .requestMatchers("/api/auth/**").permitAll()
-                // --- QUAN TRỌNG NHẤT: CHO PHÉP METHOD OPTIONS ---
-                // Dòng này giúp Preflight Request đi qua mà không cần Token
-                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                // Các request khác phải đăng nhập
-                .anyRequest().authenticated()
+                        // Cho phép Auth
+                        .requestMatchers("/api/auth/**").permitAll()
+
+                        // --- QUAN TRỌNG NHẤT: CHO PHÉP METHOD OPTIONS ---
+                        // Dòng này giúp Preflight Request đi qua mà không cần Token
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                        // Các request khác phải đăng nhập
+                        .anyRequest().authenticated()
                 )
+
                 // 4. Session Stateless
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
                 // 5. Thêm Filter JWT
                 .authenticationProvider(authenticationProvider)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
@@ -62,11 +66,7 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
 
         // Cho phép tất cả các domain (hoặc sửa thành domain cụ thể của Google IDX nếu muốn chặt chẽ)
-        configuration.setAllowedOriginPatterns(List.of(
-                "https://main.d1fpkat6bk87ik.amplifyapp.com",
-                "https://d1kyo8tlhbz0hy.cloudfront.net",
-                "http://localhost:3000" // For local development
-        ));
+        configuration.setAllowedOriginPatterns(List.of("*"));
 
         // Cho phép các method
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"));

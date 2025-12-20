@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -194,6 +195,7 @@ public class HouseholdService {
 
         // 2. Lấy danh sách Entity
         List<Resident> residents = residentRepository.findByApartment_Houseid(householdId);
+        Set<Integer> residentIdsWithAccount = userAccountRepository.findAllResidentIdsWithAccount();
 
         // 3. Convert sang DTO Response
         return residents.stream()
@@ -207,6 +209,7 @@ public class HouseholdService {
                         .isHost(resident.getIsHost())
                         .status(resident.getState())
                         .cccd(resident.getCccd())
+                        .hasAccount(residentIdsWithAccount.contains(resident.getResidentid()))
                         .build())
                 .toList();
     }
@@ -354,6 +357,7 @@ public class HouseholdService {
     public Page<ResidentResponse> getAllResidents(String keyword, Pageable pageable) {
         // 1. Gọi Repo lấy danh sách Entity có phân trang
         Page<Resident> residentPage = residentRepository.findAllResidents(keyword, pageable);
+        Set<Integer> residentIdsWithAccount = userAccountRepository.findAllResidentIdsWithAccount();
 
         // 2. Map từ Entity sang DTO
         return residentPage.map(resident -> ResidentResponse.builder()
@@ -369,6 +373,7 @@ public class HouseholdService {
                 // Map thêm thông tin phòng
                 .roomNumber(resident.getApartment() != null ? resident.getApartment().getApartmentNumber() : "N/A")
                 .building(resident.getApartment() != null ? resident.getApartment().getBuilding() : "N/A")
+                .hasAccount(residentIdsWithAccount.contains(resident.getResidentid()))
                 .build());
     }
 

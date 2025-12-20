@@ -21,6 +21,7 @@ public class Resident {
     @Column(length = 20, nullable = false)
     private String phonenumber;
 
+    @Column(name = "email")
     private String email;
     private LocalDate dob;
 
