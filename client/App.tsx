@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
@@ -12,6 +13,9 @@ import HouseholdManager from './pages/admin/HouseholdManager';
 import ResidentManager from './pages/admin/ResidentManager';
 import RequestManager from './pages/admin/RequestManager';
 import FeeManager from './pages/admin/FeeManager';
+import InvoiceManager from './pages/admin/InvoiceManager';
+import RegistrationManager from './pages/admin/RegistrationManager';
+import ResidentRegistration from './pages/resident/ResidentRegistration';
 import { User, Role } from './types';
 import { getCurrentUser, logout } from './services/authService';
 
@@ -92,6 +96,14 @@ const App: React.FC = () => {
             } 
           />
           <Route 
+            path="/resident/registrations" 
+            element={
+              <ProtectedRoute user={user} allowedRoles={[Role.RESIDENT]}>
+                 <ResidentRegistration user={user!} />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
             path="/resident/profile" 
             element={
               <ProtectedRoute user={user} allowedRoles={[Role.RESIDENT]}>
@@ -130,6 +142,22 @@ const App: React.FC = () => {
             element={
               <ProtectedRoute user={user} allowedRoles={[Role.ADMIN]}>
                 <FeeManager />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/admin/invoices" 
+            element={
+              <ProtectedRoute user={user} allowedRoles={[Role.ADMIN]}>
+                <InvoiceManager />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/admin/registrations" 
+            element={
+              <ProtectedRoute user={user} allowedRoles={[Role.ADMIN]}>
+                <RegistrationManager />
               </ProtectedRoute>
             } 
           />

@@ -1,13 +1,27 @@
+
 import React, { useState, useEffect } from 'react';
 import { getAllResidents, mapRelationship, updateHouseholdMember, deleteResident } from '../../services/householdService';
+import { changePassword } from '../../services/authService';
 import { ResidentInfo, ResidentMember } from '../../types';
-import { Search, Loader2, RefreshCcw, ChevronLeft, ChevronRight, User, Edit2, X, Save, Trash2, AlertTriangle } from 'lucide-react';
+import { 
+  Search, Loader2, RefreshCcw, ChevronLeft, ChevronRight, User, Edit2, X, Save, 
+  Trash2, AlertTriangle, Key, Lock, Eye, EyeOff, CheckCircle, AlertCircle 
+} from 'lucide-react';
+
+interface ToastState {
+  show: boolean;
+  message: string;
+  type: 'success' | 'error';
+}
 
 const ResidentManager: React.FC = () => {
   const [residents, setResidents] = useState<ResidentInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   
+  // Toast State
+  const [toast, setToast] = useState<ToastState>({ show: false, message: '', type: 'success' });
+
   // Pagination State
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
@@ -28,8 +42,20 @@ const ResidentManager: React.FC = () => {
       relationToOwner: '',
       cccd: '',
       phoneNumber: '',
+      email: '',
       status: 'THUONG_TRU'
   });
+
+  // Password Reset Modal State
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [passwordFormData, setPasswordFormData] = useState({
+      email: '',
+      newPassword: '',
+      confirmPassword: '',
+      residentName: ''
+  });
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [showPasswords, setShowPasswords] = useState(false);
 
   // Delete Confirmation State
   const [deleteConfirmation, setDeleteConfirmation] = useState<{
@@ -38,11 +64,17 @@ const ResidentManager: React.FC = () => {
     name: string;
   } | null>(null);
 
+  // Helper show toast
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast(prev => ({ ...prev, show: false })), 4000);
+  };
+
   // Debounce Logic
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchTerm);
-      setPage(0); // Reset to page 0 on new search
+      setPage(0);
     }, 500);
     return () => clearTimeout(timer);
   }, [searchTerm]);
@@ -77,9 +109,10 @@ const ResidentManager: React.FC = () => {
       setEditFormData({
           fullName: resident.name,
           dateOfBirth: resident.dob || '',
-          relationToOwner: resident.relationship, // Backend specific value
+          relationToOwner: resident.relationship,
           cccd: resident.cccd || '',
           phoneNumber: resident.phoneNumber || '',
+          email: resident.email || '',
           status: resident.status || 'THUONG_TRU'
       });
       setIsEditModalOpen(true);
@@ -92,13 +125,54 @@ const ResidentManager: React.FC = () => {
       setIsUpdating(true);
       try {
           await updateHouseholdMember(editingResidentId, editFormData);
-          alert('Cập nhật thông tin cư dân thành công!');
+          showToast('Cập nhật thông tin cư dân thành công!');
           setIsEditModalOpen(false);
-          fetchResidents(); // Refresh list
+          fetchResidents();
       } catch (err: any) {
-          alert(err.message);
+          showToast(err.message, 'error');
       } finally {
           setIsUpdating(false);
+      }
+  };
+
+  const initiatePasswordReset = (resident: ResidentInfo) => {
+      if (!resident.hasAccount) {
+          showToast('Cư dân này chưa đăng ký tài khoản hệ thống. Không thể đổi mật khẩu.', 'error');
+          return;
+      }
+      if (!resident.email) {
+          showToast('Cư dân này không có email. Vui lòng cập nhật email trước.', 'error');
+          return;
+      }
+      setPasswordFormData({
+          email: resident.email,
+          newPassword: '',
+          confirmPassword: '',
+          residentName: resident.name
+      });
+      setIsPasswordModalOpen(true);
+  };
+
+  const handlePasswordReset = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (passwordFormData.newPassword !== passwordFormData.confirmPassword) {
+          showToast('Mật khẩu nhập lại không khớp!', 'error');
+          return;
+      }
+
+      setIsResettingPassword(true);
+      try {
+          const message = await changePassword(
+              passwordFormData.email, 
+              passwordFormData.newPassword, 
+              passwordFormData.confirmPassword
+          );
+          showToast(message || 'Đổi mật khẩu thành công!');
+          setIsPasswordModalOpen(false);
+      } catch (err: any) {
+          showToast(err.message || 'Có lỗi xảy ra', 'error');
+      } finally {
+          setIsResettingPassword(false);
       }
   };
 
@@ -115,22 +189,34 @@ const ResidentManager: React.FC = () => {
 
     try {
       const message = await deleteResident(deleteConfirmation.id);
-      alert(message); // Display success message from backend
+      showToast(message);
       setDeleteConfirmation(null);
-      // If we deleted the last item on a page, go back one page if possible
       if (residents.length === 1 && page > 0) {
         setPage(page - 1);
       } else {
         fetchResidents();
       }
     } catch (err: any) {
-      alert(err.message); // Display error message from backend (e.g., debt issue)
+      showToast(err.message, 'error');
       setDeleteConfirmation(null);
     }
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      {/* Custom Toast Notification */}
+      {toast.show && (
+        <div className={`fixed top-4 right-4 z-[100] flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl animate-in slide-in-from-right-full duration-300 ${
+          toast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+        }`}>
+          {toast.type === 'success' ? <CheckCircle className="w-6 h-6" /> : <AlertCircle className="w-6 h-6" />}
+          <p className="font-bold">{toast.message}</p>
+          <button onClick={() => setToast(prev => ({ ...prev, show: false }))} className="ml-2 hover:opacity-70">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       <div className="flex flex-col md:flex-row justify-between items-center gap-4">
         <h1 className="text-2xl font-bold text-gray-800">Danh sách cư dân toàn khu</h1>
         <div className="text-sm text-gray-500">
@@ -176,7 +262,7 @@ const ResidentManager: React.FC = () => {
                     <th className="px-6 py-4">Căn hộ</th>
                     <th className="px-6 py-4">Ngày sinh</th>
                     <th className="px-6 py-4">Quan hệ</th>
-                    <th className="px-6 py-4">SĐT</th>
+                    <th className="px-6 py-4">SĐT / Email</th>
                     <th className="px-6 py-4">CCCD</th>
                     <th className="px-6 py-4">Trạng thái</th>
                     <th className="px-6 py-4 text-right">Thao tác</th>
@@ -209,8 +295,11 @@ const ResidentManager: React.FC = () => {
                             {mapRelationship(r.relationship, r.isHost)}
                         </span>
                     </td>
-                    <td className="px-6 py-4 text-gray-500 font-mono">{r.phoneNumber || '-'}</td>
-                    <td className="px-6 py-4 text-gray-500 font-mono">{r.cccd || '-'}</td>
+                    <td className="px-6 py-4 text-gray-500">
+                        <div className="font-mono text-xs">{r.phoneNumber || '-'}</div>
+                        <div className="text-[10px] text-gray-400 truncate max-w-[120px]">{r.email || '-'}</div>
+                    </td>
+                    <td className="px-6 py-4 text-gray-500 font-mono text-xs">{r.cccd || '-'}</td>
                     <td className="px-6 py-4">
                          {r.status === 'THUONG_TRU' ? (
                             <span className="text-green-600 text-xs font-semibold bg-green-50 px-2 py-1 rounded">Thường trú</span>
@@ -222,7 +311,18 @@ const ResidentManager: React.FC = () => {
                             <span className="text-gray-400 text-xs italic">Không rõ</span>
                          )}
                     </td>
-                    <td className="px-6 py-4 text-right flex items-center justify-end">
+                    <td className="px-6 py-4 text-right flex items-center justify-end gap-1">
+                        <button 
+                            onClick={() => initiatePasswordReset(r)}
+                            title={r.hasAccount ? "Đổi mật khẩu" : "Chưa có tài khoản hệ thống"}
+                            className={`p-2 rounded-lg transition-colors ${
+                                r.hasAccount 
+                                ? 'text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50' 
+                                : 'text-gray-300 hover:bg-gray-50'
+                            }`}
+                        >
+                            <Key className="w-4 h-4" />
+                        </button>
                         <button 
                             onClick={() => initiateEdit(r)}
                             title="Sửa thông tin"
@@ -233,7 +333,7 @@ const ResidentManager: React.FC = () => {
                         <button 
                             onClick={() => initiateDelete(r)}
                             title="Xóa cư dân"
-                            className="text-red-600 hover:text-red-800 transition-colors p-2 hover:bg-red-50 rounded-lg ml-2"
+                            className="text-red-600 hover:text-red-800 transition-colors p-2 hover:bg-red-50 rounded-lg"
                         >
                             <Trash2 className="w-4 h-4" />
                         </button>
@@ -279,10 +379,11 @@ const ResidentManager: React.FC = () => {
         )}
       </div>
 
+      {/* Modal Edit Resident... (giữ nguyên code cũ) */}
       {/* Edit Resident Modal */}
       {isEditModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-             <div className="bg-white rounded-xl shadow-xl max-w-lg w-full p-6">
+             <div className="bg-white rounded-xl shadow-xl max-w-lg w-full p-6 animate-in zoom-in-95">
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-xl font-bold text-gray-800">Sửa thông tin cư dân</h2>
                   <button onClick={() => setIsEditModalOpen(false)} className="text-gray-400 hover:text-gray-600">
@@ -357,14 +458,24 @@ const ResidentManager: React.FC = () => {
                         />
                      </div>
                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">CCCD/CMND</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                         <input
-                           type="text"
+                           type="email"
                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                           value={editFormData.cccd}
-                           onChange={e => setEditFormData({...editFormData, cccd: e.target.value})}
+                           value={editFormData.email}
+                           onChange={e => setEditFormData({...editFormData, email: e.target.value})}
                         />
                      </div>
+                  </div>
+
+                  <div>
+                     <label className="block text-sm font-medium text-gray-700 mb-1">CCCD/CMND</label>
+                     <input
+                        type="text"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        value={editFormData.cccd}
+                        onChange={e => setEditFormData({...editFormData, cccd: e.target.value})}
+                     />
                   </div>
 
                    <div className="flex justify-end space-x-3 mt-6 pt-4 border-t">
@@ -389,10 +500,106 @@ const ResidentManager: React.FC = () => {
         </div>
       )}
 
+      {/* Modal Password Reset... (giữ nguyên code cũ) */}
+      {/* Password Reset Modal */}
+      {isPasswordModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+             <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6 animate-in zoom-in-95">
+                <div className="flex justify-between items-center mb-6">
+                  <div className="flex items-center gap-2">
+                    <div className="p-2 bg-indigo-100 text-indigo-600 rounded-lg">
+                      <Lock className="w-5 h-5"/>
+                    </div>
+                    <h2 className="text-xl font-bold text-gray-800">Đặt lại mật khẩu</h2>
+                  </div>
+                  <button onClick={() => setIsPasswordModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+                
+                <p className="text-sm text-gray-500 mb-4">
+                  Đang đổi mật khẩu cho cư dân: <span className="font-bold text-gray-800">{passwordFormData.residentName}</span>
+                </p>
+
+                <form onSubmit={handlePasswordReset} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Email (Tài khoản)</label>
+                    <input
+                       type="text"
+                       disabled
+                       className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-500 cursor-not-allowed"
+                       value={passwordFormData.email}
+                    />
+                  </div>
+
+                  <div className="relative">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Mật khẩu mới</label>
+                    <input
+                       type={showPasswords ? "text" : "password"}
+                       required
+                       minLength={6}
+                       placeholder="Ít nhất 6 ký tự"
+                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                       value={passwordFormData.newPassword}
+                       onChange={e => setPasswordFormData({...passwordFormData, newPassword: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="relative">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Nhập lại mật khẩu mới</label>
+                    <input
+                       type={showPasswords ? "text" : "password"}
+                       required
+                       minLength={6}
+                       placeholder="Xác nhận mật khẩu"
+                       className={`w-full px-3 py-2 border rounded-lg focus:ring-2 ${
+                         passwordFormData.confirmPassword && passwordFormData.newPassword !== passwordFormData.confirmPassword 
+                         ? 'border-red-300 focus:ring-red-500' 
+                         : 'border-gray-300 focus:ring-indigo-500'
+                       }`}
+                       value={passwordFormData.confirmPassword}
+                       onChange={e => setPasswordFormData({...passwordFormData, confirmPassword: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="flex items-center">
+                    <button 
+                      type="button" 
+                      onClick={() => setShowPasswords(!showPasswords)}
+                      className="text-xs text-indigo-600 font-medium hover:underline flex items-center gap-1"
+                    >
+                      {showPasswords ? <EyeOff className="w-3 h-3"/> : <Eye className="w-3 h-3"/>}
+                      {showPasswords ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                    </button>
+                  </div>
+
+                   <div className="flex justify-end space-x-3 mt-6 pt-4 border-t">
+                        <button
+                          type="button"
+                          onClick={() => setIsPasswordModalOpen(false)}
+                          className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                        >
+                          Hủy
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={isResettingPassword}
+                          className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+                        >
+                          {isResettingPassword ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                          {isResettingPassword ? 'Đang thực hiện...' : 'Cập nhật mật khẩu'}
+                        </button>
+                   </div>
+                </form>
+             </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal... (giữ nguyên code cũ) */}
       {/* Delete Confirmation Modal */}
       {deleteConfirmation && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4">
-            <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6">
+            <div className="bg-white rounded-xl shadow-xl max-sm w-full p-6 animate-in zoom-in-95">
             <div className="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
                 <AlertTriangle className="w-6 h-6 text-red-600" />
             </div>

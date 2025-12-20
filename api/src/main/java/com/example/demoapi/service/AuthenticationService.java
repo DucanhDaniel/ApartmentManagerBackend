@@ -3,6 +3,7 @@ package com.example.demoapi.service;
 import com.example.demoapi.dto.LoginRequest;
 import com.example.demoapi.dto.LoginResponse;
 import com.example.demoapi.dto.RefreshTokenResponse;
+import com.example.demoapi.dto.request.ChangePasswordRequest;
 import com.example.demoapi.dto.request.RegisterRequest;
 import com.example.demoapi.model.Resident;
 import com.example.demoapi.model.UserAccount;
@@ -177,5 +178,21 @@ public class AuthenticationService {
         newUser.setResident(resident); // Liên kết khóa ngoại (Quan trọng!)
 
         userAccountRepository.save(newUser);
+    }
+
+    @Transactional
+    public void changePassword(String email, ChangePasswordRequest request) {
+        // 1. Tìm user trong DB
+        UserAccount user = userAccountRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
+
+        // 3. Kiểm tra mật khẩu mới và xác nhận có khớp nhau không
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new RuntimeException("Mật khẩu xác nhận không khớp!");
+        }
+
+        // 4. Mã hóa mật khẩu mới và lưu vào DB
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userAccountRepository.save(user);
     }
 }

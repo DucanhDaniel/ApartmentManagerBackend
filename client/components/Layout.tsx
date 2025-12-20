@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { User, Role } from '../types';
@@ -13,7 +14,9 @@ import {
   Bell,
   Building,
   UserCheck,
-  Banknote
+  Banknote,
+  Receipt,
+  MapPin
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -35,6 +38,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
     { path: '/resident/dashboard', label: 'Trang chủ', icon: Home },
     { path: '/resident/fees', label: 'Danh sách phí', icon: CreditCard },
     { path: '/resident/history', label: 'Lịch sử thanh toán', icon: FileText },
+    { path: '/resident/registrations', label: 'Tạm trú & Tạm vắng', icon: MapPin },
     { path: '/resident/profile', label: 'Thông tin cá nhân', icon: Users },
   ];
 
@@ -43,6 +47,8 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
     { path: '/admin/households', label: 'Quản lý hộ khẩu', icon: Building },
     { path: '/admin/residents', label: 'Quản lý cư dân', icon: UserCheck },
     { path: '/admin/fees', label: 'Quản lý khoản thu', icon: Banknote },
+    { path: '/admin/invoices', label: 'Quản lý hóa đơn', icon: Receipt },
+    { path: '/admin/registrations', label: 'Tạm trú & Tạm vắng', icon: MapPin },
     { path: '/admin/requests', label: 'Yêu cầu cư dân', icon: Bell },
   ];
 

@@ -54,54 +54,95 @@ export interface ResidentMember {
   status?: string; // e.g. "THUONG_TRU", "TAM_TRU"
 }
 
-// New interface for the flat resident list response
 export interface ResidentInfo {
   id: number | string;
-  residentCode?: string; // Added resident code
+  residentCode?: string;
   name: string;
   dob: string | null;
   phoneNumber: string | null;
+  email: string | null;
   relationship: string;
   isHost: boolean;
   status: string | null;
   cccd: string | null;
   roomNumber: string;
   building: string | null;
+  hasAccount: boolean;
 }
 
-// Generic Page interface for Spring Boot pagination
 export interface Page<T> {
   content: T[];
   totalPages: number;
   totalElements: number;
   size: number;
-  number: number; // Current page index (0-based)
+  number: number;
   first: boolean;
   last: boolean;
   numberOfElements: number;
   empty: boolean;
 }
 
-// Represents a bill/invoice assigned to a household
+// Invoice related types
+export interface InvoiceDetail {
+  id: number;
+  feeName: string;
+  unitPrice: number;
+  unit: string;
+  quantity: number;
+  amount: number;
+}
+
+export interface Invoice {
+  id: number;
+  title: string;
+  roomNumber: string;
+  month: number;
+  year: number;
+  dueDate: string;
+  totalAmount: number;
+  status: 'paid' | 'unpaid';
+  details?: InvoiceDetail[] | null;
+}
+
+export interface FeeDefinition {
+  id: number;
+  name: string;
+  description: string;
+  unitPrice: number;
+  unit: string;
+  billingCycle: string;
+  isMandatory: boolean;
+}
+
+// Added missing Fee interface
 export interface Fee {
   id: string;
-  name: string; // e.g., "Phí dịch vụ T10", "Tiền điện"
+  name: string;
   amount: number;
   deadline: string;
   status: 'PENDING' | 'PAID';
   householdId: string;
-  month: string; // "10/2025"
+  month: string;
 }
 
-// Represents the definition/category of a fee (Admin manages this)
-export interface FeeDefinition {
-  id: number;
-  name: string;        // Mapped from 'feename'
+// Added missing RequestChange interface
+export interface RequestChange {
+  key: string;
+  label: string;
+  oldValue: string | number;
+  newValue: string | number;
+}
+
+// Added missing RequestTicket interface
+export interface RequestTicket {
+  id: string;
+  title: string;
   description: string;
-  unitPrice: number;   // Mapped from 'unitprice'
-  unit: string;        // e.g., 'm2', 'household', 'person'
-  billingCycle: string;// Mapped from 'billingcycle' (e.g., 'monthly')
-  isMandatory: boolean;// Mapped from '_mandatory'
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  householdId: string;
+  createdAt: string;
+  changes?: RequestChange[];
+  rejectReason?: string;
 }
 
 export interface Transaction {
@@ -114,26 +155,44 @@ export interface Transaction {
   status: 'SUCCESS' | 'FAILED';
 }
 
-export interface RequestChange {
-  key: string;
-  label: string;
-  oldValue: string | number;
-  newValue: string | number;
-}
-
-export interface RequestTicket {
-  id: string;
-  title: string;
-  description: string;
-  status: 'PENDING' | 'APPROVED' | 'REJECTED';
-  householdId: string;
-  createdAt: string;
-  changes?: RequestChange[];
-  rejectReason?: string;
-}
-
 export interface StatData {
   month: string;
   revenue: number;
   debt: number;
+}
+
+// --- Registration Types ---
+export enum RegistrationType {
+  TAM_TRU = 'TAM_TRU',
+  TAM_VANG = 'TAM_VANG'
+}
+
+export enum RegistrationStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED'
+}
+
+export interface Registration {
+  id: number;
+  residentId: number; // Added for editing
+  houseId: number;    // Added for editing
+  residentName: string;
+  roomNumber: string;
+  type: RegistrationType;
+  startDate: string;
+  endDate: string;
+  reason: string;
+  status: RegistrationStatus;
+  adminNote?: string | null;
+}
+
+export interface CreateRegistrationRequest {
+  residentId: number | string;
+  houseId: number | string;
+  type: RegistrationType;
+  startDate: string;
+  endDate: string;
+  reason: string;
+  note?: string; // Admin note
 }
