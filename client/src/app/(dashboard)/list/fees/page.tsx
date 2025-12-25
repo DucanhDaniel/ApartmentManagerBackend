@@ -54,7 +54,7 @@ const FeeList: React.FC<FeeListProps> = ({ user }) => {
     try {
       // Pay each selected invoice
       for (const invoiceId of Array.from(selectedInvoiceIds)) {
-        await simulatePayment(invoiceId);
+        await simulatePayment(invoiceId as number);
       }
 
       // Refresh invoices after payment
