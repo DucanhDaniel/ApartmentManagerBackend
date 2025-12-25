@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { User, Role } from '../../types';
 import {
   Home,
   Users,
@@ -18,6 +17,7 @@ import {
   MapPin,
   LucideIcon
 } from 'lucide-react';
+import { Role, User } from '@/src/lib/types';
 
 // Navigation link type definition
 interface NavLink {

@@ -10,11 +10,11 @@ import {
 } from '../../../../lib/invoiceService';
 import { getHouseholds } from '../../../../lib/householdService';
 import { getAllFeeDefinitions } from '../../../../lib/feeService';
-import { Invoice, Household, FeeDefinition, Page, ApartmentStatus, ApartmentType } from '../../../../types';
 import {
   Plus, Search, Loader2, RefreshCcw, FileText, ChevronLeft, ChevronRight,
   X, Filter, CheckCircle, Clock, Info, Banknote, Eye, Printer, Trash2, AlertTriangle, Home, User, Phone, Ruler, Building, Edit2, Check, Save
 } from 'lucide-react';
+import { ApartmentStatus, FeeDefinition, Household, Invoice } from '@/src/lib/types';
 
 const InvoiceManager: React.FC = () => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);

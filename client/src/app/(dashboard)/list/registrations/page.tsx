@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getRegistrations, approveRegistration, createRegistration, updateRegistration, deleteRegistration } from '../../../../lib/registrationService';
 import { getAllResidents, getHouseholds } from '../../../../lib/householdService';
-import { Registration, RegistrationStatus, RegistrationType, ResidentInfo, Household } from '../../../../types';
 import {
   Search, Filter, Loader2, RefreshCcw, ChevronLeft, ChevronRight,
   CheckCircle, XCircle, Clock, MapPin, X, Plus, AlertTriangle, User, Home, Calendar, Info, Save, ChevronDown, FilterX, Trash2, Edit2
 } from 'lucide-react';
+import { Household, Registration, RegistrationStatus, RegistrationType, ResidentInfo } from '@/src/lib/types';
 
 const RegistrationManager: React.FC = () => {
   const [registrations, setRegistrations] = useState<Registration[]>([]);

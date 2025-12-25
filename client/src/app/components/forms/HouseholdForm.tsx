@@ -1,5 +1,5 @@
 import React from 'react';
-import { ApartmentStatus, ApartmentType } from '../../../types';
+import { ApartmentStatus, ApartmentType } from '@/src/lib/types';
 import { Users, X } from 'lucide-react';
 
 export interface HouseholdFormData {

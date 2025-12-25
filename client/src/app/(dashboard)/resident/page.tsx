@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { User, Household, Invoice } from '../../../types';
+import { User, Household, Invoice } from '@/src/lib/types';
 import { getHouseholdById } from '../../../lib/householdService';
 import { getInvoices } from '../../../lib/invoiceService';
 import { CreditCard, Home, AlertTriangle, Loader2 } from 'lucide-react';

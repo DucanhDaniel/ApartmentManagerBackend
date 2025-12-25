@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Registration, RegistrationStatus, RegistrationType, ResidentMember, User, CreateRegistrationRequest } from '../../../types';
+import { Registration, RegistrationStatus, RegistrationType, ResidentMember, User, CreateRegistrationRequest } from '@/src/lib/types';
 import { getRegistrations, createRegistration, updateRegistration, deleteRegistration } from '../../../lib/registrationService';
 import { getHouseholdMembers } from '../../../lib/householdService';
 import {

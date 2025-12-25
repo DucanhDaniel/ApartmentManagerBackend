@@ -1,6 +1,6 @@
 import React from 'react';
 import { X, AlertTriangle, Loader2, Banknote } from 'lucide-react';
-import { Household, FeeDefinition } from '../../../types';
+import { Household, FeeDefinition } from '@/src/lib/types';
 
 export interface InvoiceFormItem {
   feeId: number;

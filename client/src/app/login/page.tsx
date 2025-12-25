@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { login } from '../../lib/authService';
-import { User, Role } from '../../types';
+import { User, Role } from '@/src/lib/types';
 import { Lock, Mail, AlertCircle } from 'lucide-react';
 
 interface LoginProps {
@@ -40,7 +40,10 @@ const LoginPage: React.FC<LoginProps> = ({ onLogin }) => {
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
         <div className="p-8">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-slate-800">Bluemoon</h1>
+            <div className="flex items-center justify-center mb-2">
+              <img src="/app/favicon.ico" alt="Bluemoon Logo" className="w-12 h-12 mr-2" />
+              <h1 className="text-3xl font-bold text-slate-800">Bluemoon</h1>
+            </div>
             <p className="text-slate-500 mt-2">Quản lý cư dân chung cư</p>
           </div>
 

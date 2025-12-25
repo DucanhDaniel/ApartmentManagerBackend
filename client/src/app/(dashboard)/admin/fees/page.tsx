@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getAllFeeDefinitions, createFeeDefinition } from '../../../../lib/feeService';
-import { FeeDefinition } from '../../../../types';
 import { Plus, Loader2, RefreshCcw, Banknote, ShieldCheck, ShieldAlert, X } from 'lucide-react';
+import { FeeDefinition } from '@/src/lib/types';
 
 const FeeManager: React.FC = () => {
   const [fees, setFees] = useState<FeeDefinition[]>([]);

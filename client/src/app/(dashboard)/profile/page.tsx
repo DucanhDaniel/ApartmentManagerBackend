@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Household, RequestTicket, RequestChange, ApartmentStatus, ResidentMember } from '../../../types';
+import { User, Household, RequestTicket, RequestChange, ApartmentStatus, ResidentMember } from '@/src/lib/types';
 import { MOCK_REQUESTS } from '../../../lib/mockData';
 import { getHouseholdById, getHouseholdMembers } from '../../../lib/householdService';
 import { User as UserIcon, Home, Phone, Users, Ruler, Edit3, History, Clock, CheckCircle, XCircle, Send, X, ArrowRight, Loader2, Building, Activity } from 'lucide-react';

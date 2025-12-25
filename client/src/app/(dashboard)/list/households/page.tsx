@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getHouseholds, createHousehold, updateHousehold, deleteHousehold, getHouseholdMembers, addHouseholdMember, updateHouseholdMember } from '../../../../lib/householdService';
-import { Household, ResidentMember, ApartmentStatus, ApartmentType } from '../../../../types';
 import { Search, Plus, Edit2, Trash2, Users, X, Key, Loader2, RefreshCcw, AlertTriangle, ArrowRightCircle } from 'lucide-react';
+import { ApartmentStatus, ApartmentType, Household, ResidentMember } from '@/src/lib/types';
 
 const HouseholdManager: React.FC = () => {
   const [households, setHouseholds] = useState<Household[]>([]);

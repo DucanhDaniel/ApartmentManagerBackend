@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { User, Invoice } from '../../../../types';
 import { getInvoices } from '../../../../lib/invoiceService';
 import { CheckCircle, AlertTriangle, FileText, Search, Loader2 } from 'lucide-react';
+import { Invoice, User } from '@/src/lib/types';
 
 interface PaymentHistoryProps {
   user: User;

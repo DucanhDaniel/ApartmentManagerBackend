@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, MapPin, User, ChevronDown, Calendar, CheckCircle, Save, Loader2 } from 'lucide-react';
-import { ResidentInfo, RegistrationType } from '../../../types';
+import { ResidentInfo, RegistrationType } from '@/src/lib/types';
 
 interface RegistrationFormProps {
   residents: ResidentInfo[];

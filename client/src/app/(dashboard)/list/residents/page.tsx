@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getAllResidents, mapRelationship, updateHouseholdMember, deleteResident } from '../../../../lib/householdService';
-import { ResidentInfo, ResidentMember } from '../../../../types';
+import { ResidentInfo, ResidentMember } from '@/src/lib/types';
 import { Search, Loader2, RefreshCcw, ChevronLeft, ChevronRight, User, Edit2, X, Save, Trash2, AlertTriangle } from 'lucide-react';
 
 const ResidentManager: React.FC = () => {

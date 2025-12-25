@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { User, Role } from '../types';
 import {
   Home,
   Users,
@@ -18,6 +17,7 @@ import {
   MapPin,
   LucideIcon
 } from 'lucide-react';
+import { Role, User } from '../lib/types';
 
 // Navigation link type definition
 interface NavLink {
@@ -98,6 +98,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
           }`}
       >
         <div className="h-16 flex items-center justify-center border-b border-slate-700">
+          <img src="/app/favicon.ico" alt="Bluemoon Logo" className="w-8 h-8 mr-2" />
           <h1 className="text-xl font-bold tracking-wider">BLUEMOON</h1>
         </div>
 

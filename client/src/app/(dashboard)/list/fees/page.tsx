@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { User, Invoice } from '../../../../types';
 import { getInvoices, simulatePayment } from '../../../../lib/invoiceService';
 import { Search, CheckCircle, Clock, Loader2 } from 'lucide-react';
+import { Invoice, User } from '@/src/lib/types';
 
 interface FeeListProps {
   user: User;

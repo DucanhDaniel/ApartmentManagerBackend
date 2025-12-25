@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { MOCK_REQUESTS, MOCK_HOUSEHOLDS } from '../../../../lib/mockData';
-import { RequestTicket } from '../../../../types';
+import { RequestTicket } from '@/src/lib/types';
 import { Search, Filter, Eye, CheckCircle, XCircle, Clock, AlertCircle, ArrowRight } from 'lucide-react';
 
 const RequestManager: React.FC = () => {
@@ -57,8 +57,8 @@ const RequestManager: React.FC = () => {
               key={status}
               onClick={() => setFilterStatus(status as any)}
               className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${filterStatus === status
-                  ? 'bg-blue-100 text-blue-700'
-                  : 'text-gray-600 hover:bg-gray-50'
+                ? 'bg-blue-100 text-blue-700'
+                : 'text-gray-600 hover:bg-gray-50'
                 }`}
             >
               {status === 'ALL' ? 'Tất cả' : status === 'PENDING' ? 'Chờ duyệt' : status === 'APPROVED' ? 'Đã duyệt' : 'Đã từ chối'}

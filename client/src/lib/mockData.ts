@@ -1,4 +1,4 @@
-import { Fee, Household, RequestTicket, Role, StatData, Transaction, User, ResidentMember, ApartmentStatus, ApartmentType } from '../types';
+import { Fee, Household, RequestTicket, Role, StatData, Transaction, User, ResidentMember, ApartmentStatus, ApartmentType } from './types';
 
 export const MOCK_USERS: User[] = [
   {

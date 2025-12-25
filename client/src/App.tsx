@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Layout from './app/components/Layout';
+import Layout from './app/layout';
 import Login from './app/login/page';
 import Register from './app/register/page';
 import ResidentDashboard from './app/(dashboard)/resident/page';
@@ -15,7 +15,7 @@ import FeeManager from './app/(dashboard)/admin/fees/page';
 import InvoiceManager from './app/(dashboard)/list/invoices/page';
 import RegistrationManager from './app/(dashboard)/list/registrations/page';
 import ResidentRegistration from './app/(dashboard)/owner/page';
-import { User, Role } from './types';
+import { User, Role } from './lib/types';
 import { getCurrentUser, logout } from './lib/authService';
 
 interface ProtectedRouteProps {
